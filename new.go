@@ -20,11 +20,12 @@ var newCmd = &cobra.Command{
 
 		if !quiet {
 			fmt.Println(banner)
+			fmt.Println()
 		}
 		if len(args) != 1 {
 			return errors.New("name of the adventure must be supplied")
 		}
-		a, err := adventure.New(args[0])
+		a, err := adventure.New("Adventurer", args[0])
 		if err != nil {
 			return err
 		}
@@ -55,7 +56,7 @@ func executeCommandLine(a *adventure.Adventure, msg string) {
 	msg = msg + " " + a.Description
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		_ = t.Execute(os.Stdout, data{a.State.Turn, msg, a.State.Location.Introduction()})
+		_ = t.Execute(os.Stdout, data{a.Turn(), msg, a.Location().Introduction()})
 
 		cmd, _ := reader.ReadString('\n')
 		msg, err = a.Execute(cmd)

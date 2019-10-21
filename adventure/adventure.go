@@ -7,7 +7,6 @@ import (
 	"errors"
 	"sort"
 	"strings"
-
 )
 
 type StartFunc func() (startingLocation components.Location)
@@ -43,22 +42,15 @@ func List() (l []string) {
 	return
 }
 
-type Response struct {
-	components.State
-	Resp string
-}
-
-func New(name string) (*Adventure, error) {
+func New(player, name string) (*Adventure, error) {
 	for _, f := range adventures {
 		if strings.EqualFold(f.name, name) {
 			start := f.starting
 			return &Adventure{
-				Name:        f.name,
-				Description: f.description,
-				State: components.State{
-					Turn:     0,
-					Location: start,
-				},
+				Player:          player,
+				Name:            f.name,
+				Description:     f.description,
+				currentLocation: start,
 			}, nil
 		}
 	}
@@ -68,18 +60,30 @@ func New(name string) (*Adventure, error) {
 
 // Adventure ties everything together and processes the turns
 type Adventure struct {
-	Name        string
-	Description string
-	State       components.State
+	Player          string
+	Name            string
+	Description     string
+	currentLocation components.Location
+	history         []string
+}
+
+func (a *Adventure) Turn() int {
+	return len(a.history)
+}
+
+func (a *Adventure) Location() components.Location {
+	return a.currentLocation
+}
+
+func (a *Adventure) NewLocation(location components.Location) {
+	a.currentLocation = location
 }
 
 func (a *Adventure) Execute(cmd string) (resp string, err error) {
-
-	newSt, resp := a.State.Location.Execute(a.State, utils.NewStringQueue([]string{"welcome"}))
-	a.State = newSt
-	a.State.Turn++
-	return resp, nil
-
-//	a.out(Response{newSt, disc})
-
+	c := utils.NewStringQueueFromLine(strings.ToLower(cmd))
+	desc, err := a.currentLocation.Execute(a, c)
+	if err == nil {
+		a.history = append(a.history, cmd)
+	}
+	return desc, err
 }
